@@ -1,0 +1,6 @@
+
+The idea here was to set up regression tests for the grammar: run a
+bunch of parses against expressions with known parses, and compare the
+results.
+
+I've never finished this.

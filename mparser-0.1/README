@@ -1,0 +1,157 @@
+mparser v0.1
+Copyright 2011 D. Wingate
+http://www.mit.edu/~wingated/
+
+--------------------------------------------------------------------
+Overview
+--------------------------------------------------------------------
+
+This is a MATLAB parser based on an ANTLR v3 grammar.  The goal of
+this package is to provide a way to parse MATLAB code from within
+MATLAB, and to be able to do source code translations on the resulting
+AST.  The primary purpose of this package is to support Stochastic
+Matlab, a probabilistic programming language.
+
+
+--------------------------------------------------------------------
+Requirements and quick start
+--------------------------------------------------------------------
+
+mparser requires the libantlr3c library, available from
+
+  http://www.antlr.org/wiki/display/ANTLR3/Using+the+ANTLR3+C+Target
+
+Make sure you install it such that matlab can find it, both at compile
+time and at runtime.  If you've installed it in a nonstandard
+location, you may have to pass appropriate flags to the mex command
+below.
+
+* From within matlab, build mparser:
+
+>> mex mparser.cpp output/matlabLexer.cpp output/matlabParser.cpp -lantlr3c
+
+* Then test it:
+
+>> [r,a] = mparser( 'tests/big_test.m', 1 );
+>> matlab_ast_print( a );
+
+If you want to modify the grammar, you'll also need ANTLR v3 (or
+ANTLRworks) to regenerate the lexer and parser files.
+
+
+--------------------------------------------------------------------
+Notes about the grammar
+--------------------------------------------------------------------
+
+While I have made every effort to be as exact as I can, there are
+still a few differences between this grammar and the "true" MATLAB
+grammar.  Most of these you will never notice, but there are a few
+that are significant:
+
+* The transpose operator ' is not supported (due to lexing confusion
+  with the single quotes used in string constants).
+
+* Constant matrices and cells must have individual elements separated
+  by a comma.
+
+* Block comments are not supported.
+
+For others, please see the comments in matlab.g
+
+The grammar is a standard ANTLR combined lexer/parser grammar.  It
+could, in principle, be used to generate parsing code for any language
+backend.  However, because whitespace is sometimes significant in
+MATLAB, there are a few times where the grammar must muck around in a
+hidden whitespace channel.  This is done in a language-specific way.
+Currently, there is support for Java and C back-ends, although the
+Java version is currently commented out in matlab.g.
+
+For the C back end, the libantlr3c library is required.  You can find
+the latest version of this from
+
+  http://www.antlr.org/wiki/display/ANTLR3/Using+the+ANTLR3+C+Target
+
+
+--------------------------------------------------------------------
+Files included in this distribution
+--------------------------------------------------------------------
+
+- matlab.g
+
+  The ANTLR grammar.  Includes a joint parser and lexer.
+
+
+- mparser
+
+  The main workhorse of this package.  mparser is a MEX file which
+  accepts either a string or a filename and parses it into a deeply
+  nested set of MATLAB structures representing an AST.  These can
+  examined and manipulated from within MATLAB.
+
+
+- matlab_ast_print.m
+
+  An example of how to walk the AST.  It accepts as input an AST and
+  simply prints out each node such that the original source code is
+  re-created.
+
+
+- gtest
+
+  This is a simple readline-based grammar tester.  You can type in an
+  expression, and it will print out the corresponding parse as a
+  scheme-style parse tree.  Useful mainly for debugging.  To build,
+  check the example Makefile.
+
+
+- show_tree
+
+  A MEX version of gtest.  Useful mainly for debugging.  To build, try
+  running
+
+>> mex show_tree.cpp output/matlabLexer.cpp output/matlabParser.cpp -lantlr3c
+
+
+--------------------------------------------------------------------
+A few other notes
+--------------------------------------------------------------------
+
+- If you need to tweak the grammar, you should be able to fire up
+  ANTLRworks and edit it.  From this directory:
+
+  java -jar antlrworks-1.4.2.jar
+
+  When you're done, make sure you hit the "generate" button, then
+  recompile everything in this directory.
+
+- Everything that ANTLR generates is in the output/ subdirectory.
+
+- ANTLR generates C files from the grammar specification.  Except that
+  they have C++ style comments, which the MEX compiler doesn't like.
+  So, we need to compile them as if they were C++ files -- except that
+  the MEX compiler doesn't let you specify the language explicitly.
+  You have to use the file's extension to do that.
+
+  So... we create symbolic links from .cpp files to .c files.  That
+  way, if you decide to tweak the grammar, you can just hit regenerate
+  -- and ANTLR will happily overwrite it's broken .c files, and we
+  don't have to worry about anything else.
+
+  Sigh.
+
+
+--------------------------------------------------------------------
+License
+--------------------------------------------------------------------
+
+The mparser package is licensed under the MIT license.  Please see the
+file COPYING for details.
+
+
+--------------------------------------------------------------------
+Contact information
+--------------------------------------------------------------------
+
+David Wingate
+wingated@mit.edu
+http://www.mit.edu/~wingated/

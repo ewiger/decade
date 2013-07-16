@@ -1,0 +1,109 @@
+% basic expressions
+a+b
+(STATEMENT_LIST(EXPR(+(a)(b))))
+a+b+c
+(STATEMENT_LIST(EXPR(+(+(a)(b))(c))))
+a-b-c
+(STATEMENT_LIST(EXPR(-(-(a)(b))(c))))
+a | b || c && z + 42 .^ 3
+(STATEMENT_LIST(EXPR(||(|(a)(b))(&&(c)(+(z)(.^(42)(3)))))))
+-3^3
+(STATEMENT_LIST(EXPR(-(^(3)(3)))))
+a^b^c
+(STATEMENT_LIST(EXPR(^(^(a)(b))(c))))
+a+b*c
+(STATEMENT_LIST(EXPR(+(a)(*(b)(c)))))
+a*b+c
+(STATEMENT_LIST(EXPR(+(*(a)(b))(c))))
+(a+b)*c.^foo
+(STATEMENT_LIST(EXPR(*(+(a)(b))(.^(c)(foo)))))
+
+% function handles
+@foo
+(STATEMENT_LIST(EXPR(@(foo))))
+@(x,y)x+y
+(STATEMENT_LIST(EXPR(@(PARAMETER_LIST(x)(y))(+(x)(y)))))
+a+@(x,y)x+y
+(STATEMENT_LIST(EXPR(+(a)(@(PARAMETER_LIST(x)(y))(+(x)(y))))))
+
+% assignments
+a = 42
+(STATEMENT_LIST(ASSIGN(a)(42)))
+a(42) = 15
+(STATEMENT_LIST(ASSIGN(a(APPLY(PARAMETER_LIST(42))))(15)))
+a(15,1:20) = [ 1, 2, 3 ]
+(STATEMENT_LIST(ASSIGN(a(APPLY(PARAMETER_LIST(15)(:(1)(20)))))(MATRIX(VECTOR(1)(2)(3)))))
+
+% indexing
+a
+(STATEMENT_LIST(EXPR(a)))
+a(42)
+(STATEMENT_LIST(EXPR(a(APPLY(PARAMETER_LIST(42))))))
+a(42,:)
+(STATEMENT_LIST(EXPR(a(APPLY(PARAMETER_LIST(42)(:))))))
+a(42,1:10)
+(STATEMENT_LIST(EXPR(a(APPLY(PARAMETER_LIST(42)(:(1)(10)))))))
+foo.bar(baz){42}.quux
+(STATEMENT_LIST(EXPR(foo(FIELDACCESS(bar))(APPLY(PARAMETER_LIST(baz)))(CELLACCESS(PARAMETER_LIST(42)))(FIELDACCESS(quux)))))
+foo.bar.baz.quux
+(STATEMENT_LIST(EXPR(foo(FIELDACCESS(bar))(FIELDACCESS(baz))(FIELDACCESS(quux)))))
+
+% cells / matrices
+[ 1, 2, 3 ]
+(STATEMENT_LIST(EXPR(MATRIX(VECTOR(1)(2)(3)))))
+{ @randn, @rand }
+(STATEMENT_LIST(EXPR(CELL(VECTOR(@(randn))(@(rand))))))
+{ {1,2,3}, {4,5,6} }
+(STATEMENT_LIST(EXPR(CELL(VECTOR(CELL(VECTOR(1)(2)(3)))(CELL(VECTOR(4)(5)(6)))))))
+% 
+% XXX these don't work yet.
+%[ 1+  2+  3 ]
+%[ 1 + 2+  3 ]
+%[ 1  +2+  3 ]
+%[ 1+  2 + 3 ]
+%[ 1 + 2 + 3 ]
+%[ 1  +2 + 3 ]
+%[ 1+  2  +3 ]
+%[ 1 + 2  +3 ]
+%[ 1  +2  +3 ]
+
+% clear / return / break / continue
+clear
+(STATEMENT_LIST(clear))
+clear foo
+(STATEMENT_LIST(clear(foo)))
+clear foo bar
+(STATEMENT_LIST(clear(foo)(bar)))
+% XXX these don't work yet
+%clear foo*
+%clear foo* bar*
+%clear foo * bar
+return
+(STATEMENT_LIST(return))
+break
+(STATEMENT_LIST(break))
+continue
+(STATEMENT_LIST(continue))
+
+% control flow
+
+% XXX this doesn't work yet
+%while a (5) end
+
+% strings and matrix transpose
+a.'
+(STATEMENT_LIST(EXPR(.'(a))))
+% XXX doesn't work yet
+%a'
+%aa' + foo('a+b')+bb'
+a = 'foo'
+(STATEMENT_LIST(ASSIGN(a)('foo')))
+foo('bar')
+(STATEMENT_LIST(EXPR(foo(APPLY(PARAMETER_LIST('bar'))))))
+foo.('bar')
+(STATEMENT_LIST(EXPR(foo(DYNFIELDACCESS('bar')))))
+foo = { 'bar', 'baz' }
+(STATEMENT_LIST(ASSIGN(foo)(CELL(VECTOR('bar')('baz')))))
+% XXX doesn't work yet
+%foo = { 'bar' 'baz' }
+

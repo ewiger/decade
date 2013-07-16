@@ -1,0 +1,7 @@
+
+This directory contains a bunch of .m files designed to stress
+different aspects of the grammar.  Everything in here should parse
+just fine (although it won't execute).
+
+Eventually, these files will serve as regression tests for the
+grammar.
