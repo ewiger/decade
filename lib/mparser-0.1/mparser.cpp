@@ -1026,12 +1026,12 @@ void mexFunction( int nlhs, mxArray *plhs[],
   }
 
   if ( nrhs == 2 ) {
-    input  = antlr3AsciiFileStreamNew( (pANTLR3_UINT8)buf );
+    input  = antlr3FileStreamNew( (pANTLR3_UINT8)buf, ANTLR3_ENC_8BIT );
     if ( input == NULL ) {
       mexErrMsgTxt( "unable to open file!\n" );
     }
   } else {
-    input = antlr3NewAsciiStringInPlaceStream( (pANTLR3_UINT8)buf, strlen(buf), NULL );
+    input = antlr3StringStreamNew( (pANTLR3_UINT8)buf, ANTLR3_ENC_8BIT, strlen(buf), NULL );
     if ( input == NULL ) {
       mexErrMsgTxt( "unable to create input stream from string!\n" );
     }

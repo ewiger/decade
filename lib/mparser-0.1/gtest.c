@@ -156,7 +156,7 @@ int main( int argc, char * argv[] ) {
   int len;
 
   if ( argc == 2 ) {
-    input  = antlr3AsciiFileStreamNew( (pANTLR3_UINT8)argv[1] );
+    input  = antlr3FileStreamNew( (pANTLR3_UINT8)argv[1], ANTLR3_ENC_8BIT );
     process_input( input );
     input->close( input );
 
@@ -180,7 +180,8 @@ int main( int argc, char * argv[] ) {
       tmp[ len+1 ] = '\0';
       add_history( buf ); // add the one without the semicolon to the history
 
-      input = antlr3NewAsciiStringInPlaceStream( tmp, len+1, NULL );
+      //input = antlr3NewAsciiStringInPlaceStream( tmp, len+1, NULL );
+      input = antlr3StringStreamNew( tmp, ANTLR3_ENC_8BIT, len+1, NULL );
       process_input( input );
       input->close( input );
 

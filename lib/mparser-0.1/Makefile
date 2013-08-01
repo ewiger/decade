@@ -7,10 +7,11 @@
 # parser useful for debugging.
 #
 
-ANTLR= /usr/local/
+ANTLR= /usr/local
 CC= gcc
 CCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib
-MEX= mex
+#MEX= mex
+MEX=/usr/local/MATLAB/R2011a/bin/mex
 
 all: gtest mparser show_tree
 
