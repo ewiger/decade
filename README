@@ -1,0 +1,7 @@
+
+
+
+Development
+-----------
+
+cd lib/libantlr3c-3.4 && ./configure --enable-64bit
