@@ -1,6 +1,11 @@
 #ifndef __MPARSER_H_
 #define __MPARSER_H_
 
+// ANTLR code-generated parser
+#include "output/matlabLexer.h"
+#include "output/matlabParser.h"
+
+
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
   #define MPARSER_HELPER_DLL_IMPORT __declspec(dllimport)
@@ -35,7 +40,29 @@
 #endif // MPARSER_DLL
 
 
-//extern MPARSER_API const char *parse_matlab(const char* mfilename);
+/* a shortcut typedef */
+typedef pANTLR3_BASE_TREE pTree;
+
+/* Returned as parsing result */
+typedef struct ParsingResult_struct {
+  int error_count;
+  pTree ast;
+  /* in case of error, these members get populated. */
+  int line, char_pos;
+  char *msg, *token;
+} ParsingResult;
 
 
-#endif //__MPARSER_H_
+class MPARSER_API MParser {
+    private:    
+        ParsingResult result;    
+    public:
+        void reportError(const char *message) { this->reportError(message, false); };
+        void reportError(std::string message, bool die) { this->reportError(message.c_str(), die); };
+        void reportError(const char *message, bool die);
+        ParsingResult parseInput(pANTLR3_INPUT_STREAM input);
+        void parseFile(const char *mfilepath);
+        ParsingResult getResult() { return this->result; };
+};
+
+#endif //__MPARSER_H

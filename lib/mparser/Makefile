@@ -15,12 +15,14 @@ CPPCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib
 #MEX= mex
 MEX=/usr/local/MATLAB/R2011a/bin/mex
 
+
 all: frontend mex_frontend
 
 frontend: parse_matlab
 
 parse_matlab: parse_matlab.cpp mparser.hpp
-	$(CPPC) $(CPPCOPTS) -DMPARSER_DLL -DMPARSER_DLL_EXPORTS -shared -Wl,-soname,mparser -o mparser.so -fPIC parse_matlab.cpp
+	$(CPPC) $(CPPCOPTS) -DMPARSER_DLL -DMPARSER_DLL_EXPORTS -shared -Wl,-soname,mparser -o mparser.so \
+	-fPIC parse_matlab.cpp output/matlabLexer.cpp output/matlabParser.cpp -lantlr3c -lboost_filesystem
 
 mex_frontend: gtest mparser show_tree
 
