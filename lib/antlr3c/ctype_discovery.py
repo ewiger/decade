@@ -23,6 +23,7 @@ def declare_signatures():
         (c_wchar, ['wchar_t']), #1-character unicode string
         (c_byte, ['char']), #int/long
         (c_ubyte, ['unsigned', 'char']), #int/long
+        (c_ubyte, ['uint8_t']),
         (c_short, ['short']), #int/long
         (c_ushort, ['unsigned', 'short']), #int/long
         (c_int,	['int']), #int/long
@@ -55,9 +56,10 @@ signature_tuples, ctype_to_c, c_to_ctype = declare_signatures()
 
 class CTypeMapper(object):
 
-    def __init__(self, parsed_structs, parsed_types, verbose=False):
+    def __init__(self, parsed_structs, parsed_types, parsed_unions, verbose=True):
         self.parsed_types = parsed_types
         self.parsed_structs = parsed_structs
+        self.parsed_unions = parsed_unions
         self._recursion_limit = 30
         self._recursion_count = 0
         self.discovery_stack = list()
@@ -83,6 +85,9 @@ class CTypeMapper(object):
 
     def is_a_struct(self, typename):
         return typename in self.parsed_structs
+
+    def is_a_union(self, typename):
+        return typename in self.parsed_unions
 
     def is_a_trivial_type(self, signature):
         return isinstance(signature, (list)) \
@@ -135,27 +140,33 @@ class CTypeMapper(object):
         in_discovery_loop = name in self.discovery_stack
         if not in_discovery_loop:
             self.discovery_stack.append(name)
-        # Create new struct
-        if name in self.parsed_structs:
-            if not in_discovery_loop:
+       
+
+        # Create new struct/union/type
+        newtype = None
+        if not in_discovery_loop:
+            if name in self.parsed_structs:
                 newtype = self.declare_struct(name)
-                self.debug('discover_type: declared a struct. Incomplete? %s' % incomplete_types)
-            else:
-                self.debug('Temporary declaring incomplete self-referencing type: %s' % name)
-                # Declare and return incomplete struct first
+            elif name in self.parsed_unions:
+                newtype = self.declare_union(name)
+        else:
+            self.debug('Temporary declaring incomplete self-referencing type: %s' % name)
+            # Declare and return incomplete struct first
+            if name in self.parsed_structs:
                 newtype = self.declare_struct(name, incomplete=True)
-                self.debug('discover_type: declared a struct. Must be incomplete %s' % incomplete_types)
-        elif name in self.parsed_types:
+            elif name in self.parsed_unions:
+                newtype = self.declare_union(name, incomplete=True)
+        if not newtype and name in self.parsed_types:
             # can map pointers signature directly to their underlying types via
             # discovery recursion
             typename = self.parsed_types[name]
-            if type(typename) == tuple and typename[0] == 'struct':
+            if type(typename) == tuple and typename[0] in ('struct', 'union'):
                 return self.discover_type(typename[1])
             newtype = self.map_signature(typename, False)
-        else:
+
+        if not newtype:
             raise Exception('Failed to discover: %s' % name)
-        # add to current module
-        #__dict__[name] = newtype
+
         return newtype       
 
 
@@ -190,9 +201,9 @@ class CTypeMapper(object):
                 typename = typename[len('struct '):]
             if self.is_discovered(typename):
                 return declarations[typename]
-            if self.is_a_struct(typename):
-                return self.discover_type(typename)
-            if self.is_user_defined(typename):
+            if self.is_a_struct(typename) \
+            or self.is_a_union(typename) \
+            or self.is_user_defined(typename):
                 return self.discover_type(typename)
            
         if is_func_arg:
@@ -206,6 +217,7 @@ class CTypeMapper(object):
                     break
                 restype.append(item)
             rest = signature[len(restype):-1]
+            restype = self.map_signature(restype)
             args = list()
             for item in rest:
                 if isinstance(item, tuple) and isinstance(item[0], tuple):
@@ -214,7 +226,7 @@ class CTypeMapper(object):
                     args.append(self.map_signature(item[0], True))
                 else:
                     args.append(self.map_signature(item))
-            return CFUNCTYPE(*args)
+            return CFUNCTYPE(restype, *args)
         
         # ARRAY
         elif len(signature) == 2 and isinstance(signature[1], list) \
@@ -227,26 +239,39 @@ class CTypeMapper(object):
         raise Exception('Failed to map signature to any ctype: %s!' %
             str(signature))
 
-    def declare_struct(self, name, as_clsname=None, incomplete=False):
+    def declare_struct(self, name, as_clsname=None, incomplete=False):    
+        return self.declare_struct_or_union(name, as_clsname, incomplete, basecls=Structure)
+
+    def declare_union(self, name, as_clsname=None, incomplete=False):    
+        return self.declare_struct_or_union(name, as_clsname, incomplete, basecls=Union)
+
+    def declare_struct_or_union(self, name, as_clsname=None, incomplete=False, basecls=Structure):
         self.debug('Declaring %s (incomplete=%s)' % (name, incomplete))
         if name in declarations:
             self.debug('Taking from cache %s' % name)
             return declarations[name]
         if as_clsname is None:
             as_clsname = name
-        if name not in self.parsed_structs:
+        if basecls == Structure and name not in self.parsed_structs:
             raise Exception('Unknown struct: "%s"' % name)
+        elif basecls == Union and name not in self.parsed_unions:
+            raise Exception('Unknown union: "%s"' % name)
+        elif basecls is not Structure and basecls is not Union:
+            raise Exception('Unknown type: "%s"' % basecls)
         if incomplete:
             newtype = type(
                 as_clsname,
-                (Structure,),
+                (basecls,),
                 dict(),
             )
             incomplete_types.append(name)
             declarations[name] = newtype
             return newtype
         # Discover fields.
-        members = self.parsed_structs[name]['members']
+        if basecls == Structure:
+            members = self.parsed_structs[name]['members']
+        elif basecls == Union:            
+            members = self.parsed_unions[name]['members']
         fields = list()
         for fieldname, fieldtype, foo in members:
             #print  '%s: %s' % (fieldname, fieldtype)
@@ -263,7 +288,7 @@ class CTypeMapper(object):
         #print 'fields: %s' % fields
         newtype = type(
             as_clsname,
-            (Structure,),
+            (basecls,),
             {'_fields_': fields},
         )
         declarations[name] = newtype

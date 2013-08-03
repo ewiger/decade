@@ -21,9 +21,10 @@ from generated.variables import *
 
 antlr_structs = dict(STRUCTS)
 antlr_types = dict(TYPES)
+antlr_unions = dict(UNIONS)
 
 
-mapper = CTypeMapper(antlr_structs, antlr_types)
+mapper = CTypeMapper(antlr_structs, antlr_types, antlr_unions)
 
 ANTLR3_BASE_TREE_struct = mapper.discover_type('ANTLR3_BASE_TREE_struct')
 

@@ -5,14 +5,17 @@ from ctypes import *
 import antlr3c
 
 
-class AntlrTree(Structure):
+class AntlrTree(antlr3c.ANTLR3_BASE_TREE_struct):
     pass
+
+
+pAntlrTree = POINTER(AntlrTree)
 
 
 class ParsingResult(Structure):
     _fields_ = [
         ('error_count', c_int),
-        ('ast', AntlrTree),
+        ('ast', pAntlrTree),
         ('line', c_int),
         ('char_pos', c_int),
         ('msg', c_char_p),
@@ -33,9 +36,17 @@ except AttributeError:
 
 
 if __name__ == '__main__':
-    exit()
     arg = os.path.join(MPARSER_DIR, 'tests', 'big_test.m')
     res = library.parse_matlab(arg)
     print res
     print res.error_count
+    print res.msg
     print res.ast
+    tree = res.ast.contents
+    print tree._fields_
+    print tree.getType
+    #print tree.children.contents
+    
+    #print res.ast._fields_
+    #pchildren =  res.ast.children
+    #print pchildren.contents

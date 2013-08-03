@@ -11,7 +11,7 @@ ANTLR= /usr/local
 CC= gcc
 CPPC= g++
 CCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib
-CPPCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib
+CPPCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib -g
 #MEX= mex
 MEX=/usr/local/MATLAB/R2011a/bin/mex
 
