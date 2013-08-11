@@ -134,6 +134,7 @@ void MParser::parseFile(const char *mfilepath)
 }
 
 extern "C" {
+
     ParsingResult parse_matlab(const char* mfilepath)
     {
         cout << "parse_matlab: \n";

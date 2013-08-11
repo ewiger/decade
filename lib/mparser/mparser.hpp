@@ -1,10 +1,13 @@
 #ifndef __MPARSER_H_
 #define __MPARSER_H_
 
+#include "astnode.h"
+
 // ANTLR code-generated parser
 #include "output/matlabLexer.h"
 #include "output/matlabParser.h"
 
+/* Define MPARSER API helpers */
 
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
@@ -39,14 +42,13 @@
   #define MPARSER_LOCAL
 #endif // MPARSER_DLL
 
+/* End of MPARSER API helpers */
 
-/* a shortcut typedef */
-typedef pANTLR3_BASE_TREE pTree;
 
 /* Returned as parsing result */
 typedef struct ParsingResult_struct {
   int error_count;
-  pTree ast;
+  pAstNode ast; // See astnode.h
   /* in case of error, these members get populated. */
   int line, char_pos;
   char *msg, *token;
@@ -55,7 +57,7 @@ typedef struct ParsingResult_struct {
 
 class MPARSER_API MParser {
     private:    
-        ParsingResult result;    
+        ParsingResult result;
     public:
         void reportError(const char *message) { this->reportError(message, false); };
         void reportError(std::string message, bool die) { this->reportError(message.c_str(), die); };

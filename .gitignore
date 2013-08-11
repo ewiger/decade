@@ -19,3 +19,5 @@
 
 # Some binaries in lib
 lib/libantlr3c-3.4/*
+*test
+
