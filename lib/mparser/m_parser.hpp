@@ -1,49 +1,22 @@
-#ifndef __MPARSER_H_
-#define __MPARSER_H_
+#ifndef __M_PARSER_H_
+#define __M_PARSER_H_
 
-#include "astnode.h"
 
-// ANTLR code-generated parser
+#include "m_api_helper.h"
+
+#include <string>
 #include "output/matlabLexer.h"
 #include "output/matlabParser.h"
 
-/* Define MPARSER API helpers */
+/* some common references */
+#define NUM_CHILDREN(x) (x)->children->size( (x)->children )
+#define CHILD(x,y) (pTREE) (x)->children->get( (x)->children, y )
+#define TYPE(x) (x)->getType( (x) )
+#define TEXT(x) (char *)( (x)->toString( (x) )->chars )
 
-// Generic helper definitions for shared library support
-#if defined _WIN32 || defined __CYGWIN__
-  #define MPARSER_HELPER_DLL_IMPORT __declspec(dllimport)
-  #define MPARSER_HELPER_DLL_EXPORT __declspec(dllexport)
-  #define MPARSER_HELPER_DLL_LOCAL
-#else
-  #if __GNUC__ >= 4
-    #define MPARSER_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
-    #define MPARSER_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
-    #define MPARSER_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
-  #else
-    #define MPARSER_HELPER_DLL_IMPORT
-    #define MPARSER_HELPER_DLL_EXPORT
-    #define MPARSER_HELPER_DLL_LOCAL
-  #endif
-#endif
 
-// Now we use the generic helper definitions above to define MPARSER_API and MPARSER_LOCAL.
-// MPARSER_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
-// MPARSER_LOCAL is used for non-api symbols.
-
-#ifdef MPARSER_DLL // defined if MPARSER is compiled as a DLL
-  #ifdef MPARSER_DLL_EXPORTS // defined if we are building the MPARSER DLL (instead of using it)
-    #define MPARSER_API MPARSER_HELPER_DLL_EXPORT
-  #else
-    #define MPARSER_API MPARSER_HELPER_DLL_IMPORT
-  #endif // MPARSER_DLL_EXPORTS
-  #define MPARSER_LOCAL MPARSER_HELPER_DLL_LOCAL
-#else // MPARSER_DLL is not defined: this means MPARSER is a static lib.
-  #define MPARSER_API
-  #define MPARSER_LOCAL
-#endif // MPARSER_DLL
-
-/* End of MPARSER API helpers */
-
+/* a shortcut typedef */
+typedef pANTLR3_BASE_TREE pTREE;
 
 /* Returned as parsing result */
 typedef struct ParsingResult_struct {
@@ -53,71 +26,90 @@ typedef struct ParsingResult_struct {
   /* in case of error, these members get populated. */
   int line, char_pos;
   char *msg, *token;
-} ParsingResult;
+} M_PARSER_API ParsingResult;
 
 
-class MPARSER_API MParser {
+/**
+ * Tree visitor pattern with events emission.
+ *
+ */
+class M_PARSER_API MEmitter {
+  private:
+    ParsingResult *result;
+  public:
+    virtual void captureEmissions(ParsingResult *result);
+
+    virtual void walkTree(pTREE tree);
+
+    virtual void emitProgram(pTREE tree) = 0;
+    virtual void emitFunction(pTREE tree) = 0;
+    virtual void emitIf(pTREE tree) = 0;
+    virtual void emitElseif(pTREE tree) = 0;
+    virtual void emitWhile(pTREE tree) = 0;
+    virtual void emitFor(pTREE tree) = 0;
+    virtual void emitSwitch(pTREE tree) = 0;
+    virtual void emitAssign(pTREE tree) = 0;
+    virtual void emitExprStmt(pTREE tree) = 0;
+
+    virtual void emitBinaryOp(pTREE tree) = 0;
+    virtual void emitUnaryOp(pTREE tree) = 0;
+
+    virtual void emitApply(pTREE tree) = 0;
+    virtual void emitCellapply(pTREE tree) = 0;
+
+    virtual void emitFieldaccess(pTREE tree) = 0;
+    virtual void emitDynfieldaccess(pTREE tree) = 0;
+
+    virtual void emitCellarray(pTREE tree, int offset) = 0;
+    virtual void emitStringarray(pTREE tree, int offset) = 0;
+
+    virtual void emitCell(pTREE tree) = 0;
+    virtual void emitMatrix(pTREE tree) = 0;
+    virtual void emitVector(pTREE tree) = 0;
+
+    virtual void emitId(pTREE tree) = 0;
+    virtual void emitIdNode(pTREE tree) = 0;
+
+    virtual void emitInt(pTREE tree) = 0;
+    virtual void emitFloat(pTREE tree) = 0;
+    virtual void emitString(pTREE tree) = 0;
+
+    virtual void emitAtOperator(pTREE tree) = 0;
+
+    virtual void emitCase(pTREE tree) = 0;
+
+    virtual void emitReturn(pTREE tree) = 0;
+    virtual void emitContinue(pTREE tree) = 0;
+    virtual void emitBreak(pTREE tree) = 0;
+    virtual void emitClear(pTREE tree) = 0;
+
+    virtual void emitParens(pTREE tree) = 0;
+
+    virtual void emitGlobal(pTREE tree) = 0;
+    virtual void emitPersistent(pTREE tree) = 0;
+
+    virtual void emitTry(pTREE tree) = 0;
+    virtual void emitCatch(pTREE tree) = 0;
+
+    virtual void emitNull() = 0;
+};
+
+
+class M_PARSER_API MParser {
     private:
         ParsingResult result;
+        MEmitter *emitter;
     public:
-        void reportError(const char *message) { this->reportError(message, false); };
-        void reportError(std::string message, bool die) { this->reportError(message.c_str(), die); };
+        MParser(MEmitter *emitter);
+        void reportError(const char *message);
+        void reportError(std::string message, bool die);
         void reportError(const char *message, bool die);
         ParsingResult parseInput(pANTLR3_INPUT_STREAM input);
         void parseFile(const char *mfilepath);
-        ParsingResult getResult() { return this->result; };
-        // Tree visitor pattern with events emission.
-        void walkTree(pANTLR3_BASE_TREE tree);
-
-        void emitProgram(pANTLR3_BASE_TREE tree);
-        void emitFunction(pANTLR3_BASE_TREE tree);
-        void emitIf(pANTLR3_BASE_TREE tree);
-        void emitElseif(pANTLR3_BASE_TREE tree);
-        void emitWhile(pANTLR3_BASE_TREE tree);
-        void emitFor(pANTLR3_BASE_TREE tree);
-        void emitSwitch(pANTLR3_BASE_TREE tree);
-        void emitAssign(pANTLR3_BASE_TREE tree);
-        void emitCellarray(pANTLR3_BASE_TREE tree); //0
-        void emitExprStmt(pANTLR3_BASE_TREE tree);
-
-        void emitApply(pANTLR3_BASE_TREE tree);
-        void emitCellapply(pANTLR3_BASE_TREE tree);
-
-        void emitFieldaccess(pANTLR3_BASE_TREE tree);
-        void emitDynfieldaccess(pANTLR3_BASE_TREE tree);
-
-        void emitStringarray(pANTLR3_BASE_TREE tree); //0
-        void emitStringarray(pANTLR3_BASE_TREE tree);
-        void emitCellarray(pANTLR3_BASE_TREE tree); //0
-
-        void emitCell(pANTLR3_BASE_TREE tree);
-        void emitMatrix(pANTLR3_BASE_TREE tree);
-        void emitVector(pANTLR3_BASE_TREE tree);
-
-        void emitId(pANTLR3_BASE_TREE tree);
-        void emitIdNode(pANTLR3_BASE_TREE tree);
-
-        void emitInt(pANTLR3_BASE_TREE tree);
-        void emitFloat(pANTLR3_BASE_TREE tree);
-        void emitString(pANTLR3_BASE_TREE tree);
-
-        void emitAtOperator(pANTLR3_BASE_TREE tree);
-
-        void emitCase(pANTLR3_BASE_TREE tree);
-
-        void emitReturn(pANTLR3_BASE_TREE tree);
-        void emitContinue(pANTLR3_BASE_TREE tree);
-        void emitBreak(pANTLR3_BASE_TREE tree);
-        void emitClear(pANTLR3_BASE_TREE tree);
-
-        void emitParens(pANTLR3_BASE_TREE tree);
-
-        void emitGlobal(pANTLR3_BASE_TREE tree);
-        void emitPersistent(pANTLR3_BASE_TREE tree);
-
-        void emitTry(pANTLR3_BASE_TREE tree);
-        void emitCatch(pANTLR3_BASE_TREE tree);
-
+        ParsingResult getResult();
 };
 
-#endif //__MPARSER_H
+
+
+
+#endif //__M_PARSER_H__

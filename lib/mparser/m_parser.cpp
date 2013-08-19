@@ -1,6 +1,7 @@
 /* m_parser.cpp
  *
- * Copyright(C) 2013 Yauhen Yakimovich
+ * Copyright(C) 2013 Yauhen Yakimovich,
+ *              2011 David Wingat
  *
  * This file is part of the mparser package, which is licensed under
  * the MIT license.  See the file COPYING for details.
@@ -11,50 +12,9 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include "m_parser.hpp"
+#include "json_emitter.hpp"
 
 using namespace std;
-
-
-/* some common references */
-#define NUM_CHILDREN(x) (x)->children->size( (x)->children )
-#define CHILD(x,y) (pTREE) (x)->children->get( (x)->children, y )
-#define TYPE(x) (x)->getType( (x) )
-#define TEXT(x) (char *)( (x)->toString( (x) )->chars )
-
-/*
- * ----------------------------------------------------------------------------
- */
-
-/*
-
-These are the kinds of expression-y things we know about:
-
-binary_operators:
-  LOG_OR
-  LOG_AND
-  BIN_OR
-  BIN_AND
-  NEQ | DOUBLE_EQ | GRTE | GRT | LSTE | LST
-  COLON
-  PLUS | MINUS
-  LEFTDIV | RIGHTDIV | TIMES | EL_LEFTDIV | EL_RIGHTDIV | EL_TIMES
-  EXP | EL_EXP
-
-unary operators:
-  postfix_operators:
-    CCT | EL_CCT
-  prefix_operators:
-    PLUS | MINUS | NEG
-
-base_expressions:
-  ID (plus_indexers)
-  INT
-  FLOAT
-  STRING
-  anon_func_handle
-  cell
-  matrix
-*/
 
 
 static void my_error_printer( pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames )
@@ -62,6 +22,10 @@ static void my_error_printer( pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 
   /* do nothing */
 }
 
+MParser::MParser(MEmitter *emitter) { this-> emitter = emitter; }
+void MParser::reportError(const char *message) { this->reportError(message, false); }
+void MParser::reportError(std::string message, bool die) { this->reportError(message.c_str(), die); }
+ParsingResult MParser::getResult() { return this->result; }
 
 void MParser::reportError(const char *message, bool die)
 {
@@ -143,13 +107,14 @@ ParsingResult MParser::parseInput( pANTLR3_INPUT_STREAM input )
     }
 
     /*
-     *  Ok!  We passed.  Now we can process the resulting AST into the
-     *  appropriate matlab structures.
+     *  Ok!  We passed.  Now we can process the resulting AST and emit it into
+     *  appropriate events.
      */
 
     // We skip extra repacking step and take ANLTR Tree as it is, even if it is
-    // not extremly nice to work with
-    retval.ast = this->walkTree(langAST.tree);
+    // not extremely nice to work with
+    this->emitter->captureEmissions(&retval);
+    this->emitter->walkTree(langAST.tree);
 
     /*
      * Must manually clean up
@@ -161,6 +126,7 @@ ParsingResult MParser::parseInput( pANTLR3_INPUT_STREAM input )
 
     return retval;
 }
+
 
 void MParser::parseFile(const char *mfilepath)
 {
@@ -175,95 +141,13 @@ void MParser::parseFile(const char *mfilepath)
 }
 
 
-void MParser::walkTree(pANTLR3_BASE_TREE tree)
-{
-if ( tree == NULL ) {
-    return NULL;
-  }
-
-  if ( isBinaryOp( tree ) ) {
-    return this->emitBinaryOp( tree );
-  }
-
-  if ( isUnaryOp( tree ) ) {
-    return this->emitUnaryOp( tree );
-  }
-
-  switch ( TYPE( tree ) ) {
-
-  case PROGRAM:        return this->emitProgram( tree );
-  case FUNCTION:       return this->emitFunction( tree );
-  case IF:             return this->emitIf( tree );
-  case ELSEIF:         return this->emitElseif( tree );
-  case WHILE:          return this->emitWhile( tree );
-  case FOR:            return this->emitFor( tree );
-  case SWITCH:         return this->emitSwitch( tree );
-  case ASSIGN:         return this->emitAssign( tree );
-  case STATEMENT_LIST: return this->emitCellarray( tree, 0 );
-  case EXPR_STMT:      return this->emitExprStmt( tree );
-
-  case APPLY:          return this->emitApply( tree );
-  case CELLACCESS:     return this->emitCellapply( tree );
-
-  case FIELDACCESS:    return this->emitFieldaccess( tree );
-  case DYNFIELDACCESS: return this->emitDynfieldaccess( tree );
-
-  case PARAMETER_LIST: return this->emitStringarray( tree, 0 );
-  case FUNCTION_RETURN:return this->emitStringarray( tree, 0 );
-  case FUNCTION_PARAMETER_LIST:
-                       return this->emitCellarray( tree, 0 );
-
-  case CELL:           return this->emitCell( tree );
-  case MATRIX:         return this->emitMatrix( tree );
-  case VECTOR:         return this->emitVector( tree );
-
-  case ID:             return this->emitId( tree );
-  case ID_NODE:        return this->emitIdNode( tree );
-
-  case INT:            return this->emitInt( tree );
-  case FLOAT:          return this->emitFloat( tree );
-  case STRING:         return this->emitString( tree );
-
-  case AT:             return this->emitAtOperator( tree );
-
-  case CASE:           return this->emitCase( tree );
-
-  case RETURNS:        return this->emitReturn( tree );
-  case CONTINUE:       return this->emitContinue( tree );
-  case BREAK:          return this->emitBreak( tree );
-  case CLEAR:          return this->emitClear( tree );
-
-  case PARENS:         return this->emitParens( tree );
-
-  case GLOBAL:         return this->emitGlobal( tree );
-  case PERSISTENT:     return this->emitPersistent( tree );
-
-  case TRY:            return this->emitTry( tree );
-  case CATCH:          return this->emitCatch( tree );
-
-  /* These are empty container nodes. */
-  case EXPRESSION:     return this->walkTree( CHILD( tree, 0 ) );
-  case RHS:            return this->walkTree( CHILD( tree, 0 ) );
-  case LHS:            return this->walkTree( CHILD( tree, 0 ) );
-  case ELSE:           return this->walkTree( CHILD( tree, 0 ) );
-  case OTHERWISE:      return this->walkTree( CHILD( tree, 0 ) );
-
-  case NULL_STMT:      return NULL;
-
-  default:
-    fprintf( stderr, "Whoa!  Unknown node type %d in the ANTLR AST!\n", TYPE(tree) );
-    return NULL;
-
-  }
-}
-
-
 extern "C" {
 
     ParsingResult parse_matlab(const char* mfilepath)
     {
         cout << "parse_matlab: \n";
-        MParser parser;
+        JsonEmitter emitter;
+        MParser parser(&emitter);
         parser.parseFile(mfilepath);
         return parser.getResult();
     }

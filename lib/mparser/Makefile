@@ -23,11 +23,12 @@ MEX=/usr/local/MATLAB/R2011a/bin/mex
 
 all: frontend mex_frontend
 
-frontend: parse_matlab
+frontend: m_parser
 
-parse_matlab: parse_matlab.cpp m_parser.hpp
-	$(CPPC) $(CPPCOPTS) -DMPARSER_DLL -DMPARSER_DLL_EXPORTS -shared -Wl,-soname,mparser -o mparser.so \
-	-fPIC parse_matlab.cpp output/matlabLexer.cpp output/matlabParser.cpp -lantlr3c -lboost_filesystem
+m_parser: m_parser.hpp m_parser.cpp
+	$(CPPC) $(CPPCOPTS) -DMPARSER_DLL -DMPARSER_DLL_EXPORTS -shared -Wl,-soname,m_parser -o m_parser.so \
+	-fPIC m_parser.cpp m_emitter.cpp json_emitter.cpp output/matlabLexer.cpp output/matlabParser.cpp \
+	-lantlr3c -lboost_filesystem
 
 mex_frontend: mparser show_tree
 
@@ -42,7 +43,8 @@ tests: asttest
 
 
 gtest: gtest.c output/matlabLexer.h output/matlabParser.h output/matlabLexer.c output/matlabParser.c
-	$(CC) $(CCOPTS) -o gtest gtest.c output/matlabLexer.c output/matlabParser.c $(CLIBS) -lantlr3c -lreadline -lcurses
+	$(CC) $(CCOPTS) -o gtest gtest.c output/matlabLexer.c output/matlabParser.c $(CLIBS) \
+	-lantlr3c -lreadline -lcurses
 
 asttest: tests/astnodetest.cpp astnode.h astnode.c
 	@[ ! -f ./astnodetest ] || rm astnodetest
