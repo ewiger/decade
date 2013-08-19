@@ -1,4 +1,4 @@
-/* parse_matlab.cpp
+/* m_parser.cpp
  *
  * Copyright(C) 2013 Yauhen Yakimovich
  *
@@ -10,9 +10,16 @@
 #include <cstdlib>
 #include <string>
 #include <boost/filesystem.hpp>
-#include "mparser.hpp"
+#include "m_parser.hpp"
 
 using namespace std;
+
+
+/* some common references */
+#define NUM_CHILDREN(x) (x)->children->size( (x)->children )
+#define CHILD(x,y) (pTREE) (x)->children->get( (x)->children, y )
+#define TYPE(x) (x)->getType( (x) )
+#define TEXT(x) (char *)( (x)->toString( (x) )->chars )
 
 
 static void my_error_printer( pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames )
@@ -21,7 +28,7 @@ static void my_error_printer( pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 
 }
 
 
-void MParser::reportError(const char *message, bool die) 
+void MParser::reportError(const char *message, bool die)
 {
     cerr << message << "\n";
     exit(EXIT_FAILURE);
@@ -107,8 +114,7 @@ ParsingResult MParser::parseInput( pANTLR3_INPUT_STREAM input )
 
     // We skip extra repacking step and take ANLTR Tree as it is, even if it is
     // not extremly nice to work with
-    //retval.ast = recurse( langAST.tree );
-    retval.ast = langAST.tree;
+    retval.ast = this->walkTree(langAST.tree);
 
     /*
      * Must manually clean up
@@ -121,7 +127,7 @@ ParsingResult MParser::parseInput( pANTLR3_INPUT_STREAM input )
     return retval;
 }
 
-void MParser::parseFile(const char *mfilepath) 
+void MParser::parseFile(const char *mfilepath)
 {
     pANTLR3_INPUT_STREAM input;
     if (!boost::filesystem::exists(mfilepath)) {
@@ -132,6 +138,90 @@ void MParser::parseFile(const char *mfilepath)
     input  = antlr3FileStreamNew((pANTLR3_UINT8)mfilepath, ANTLR3_ENC_8BIT);
     this->result = this->parseInput(input);
 }
+
+
+void MParser::walkTree(pANTLR3_BASE_TREE tree)
+{
+if ( tree == NULL ) {
+    return NULL;
+  }
+
+  if ( isBinaryOp( tree ) ) {
+    return this->emitBinaryOp( tree );
+  }
+
+  if ( isUnaryOp( tree ) ) {
+    return this->emitUnaryOp( tree );
+  }
+
+  switch ( TYPE( tree ) ) {
+
+  case PROGRAM:        return this->emitProgram( tree );
+  case FUNCTION:       return this->emitFunction( tree );
+  case IF:             return this->emitIf( tree );
+  case ELSEIF:         return this->emitElseif( tree );
+  case WHILE:          return this->emitWhile( tree );
+  case FOR:            return this->emitFor( tree );
+  case SWITCH:         return this->emitSwitch( tree );
+  case ASSIGN:         return this->emitAssign( tree );
+  case STATEMENT_LIST: return this->emitCellarray( tree, 0 );
+  case EXPR_STMT:      return this->emitExprStmt( tree );
+
+  case APPLY:          return this->emitApply( tree );
+  case CELLACCESS:     return this->emitCellapply( tree );
+
+  case FIELDACCESS:    return this->emitFieldaccess( tree );
+  case DYNFIELDACCESS: return this->emitDynfieldaccess( tree );
+
+  case PARAMETER_LIST: return this->emitStringarray( tree, 0 );
+  case FUNCTION_RETURN:return this->emitStringarray( tree, 0 );
+  case FUNCTION_PARAMETER_LIST:
+                       return this->emitCellarray( tree, 0 );
+
+  case CELL:           return this->emitCell( tree );
+  case MATRIX:         return this->emitMatrix( tree );
+  case VECTOR:         return this->emitVector( tree );
+
+  case ID:             return this->emitId( tree );
+  case ID_NODE:        return this->emitIdNode( tree );
+
+  case INT:            return this->emitInt( tree );
+  case FLOAT:          return this->emitFloat( tree );
+  case STRING:         return this->emitString( tree );
+
+  case AT:             return this->emitAtOperator( tree );
+
+  case CASE:           return this->emitCase( tree );
+
+  case RETURNS:        return this->emitReturn( tree );
+  case CONTINUE:       return this->emitContinue( tree );
+  case BREAK:          return this->emitBreak( tree );
+  case CLEAR:          return this->emitClear( tree );
+
+  case PARENS:         return this->emitParens( tree );
+
+  case GLOBAL:         return this->emitGlobal( tree );
+  case PERSISTENT:     return this->emitPersistent( tree );
+
+  case TRY:            return this->emitTry( tree );
+  case CATCH:          return this->emitCatch( tree );
+
+  /* These are empty container nodes. */
+  case EXPRESSION:     return this->walkTree( CHILD( tree, 0 ) );
+  case RHS:            return recurse( CHILD( tree, 0 ) );
+  case LHS:            return recurse( CHILD( tree, 0 ) );
+  case ELSE:           return recurse( CHILD( tree, 0 ) );
+  case OTHERWISE:      return recurse( CHILD( tree, 0 ) );
+
+  case NULL_STMT:      return NULL;
+
+  default:
+    fprintf( stderr, "Whoa!  Unknown node type %d in the ANTLR AST!\n", TYPE(tree) );
+    return NULL;
+
+  }
+}
+
 
 extern "C" {
 

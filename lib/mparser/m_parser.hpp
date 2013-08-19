@@ -48,7 +48,8 @@
 /* Returned as parsing result */
 typedef struct ParsingResult_struct {
   int error_count;
-  pAstNode ast; // See astnode.h
+  //pAstNode ast; // See astnode.h
+  const char *ast; // JSON AST
   /* in case of error, these members get populated. */
   int line, char_pos;
   char *msg, *token;
@@ -56,7 +57,7 @@ typedef struct ParsingResult_struct {
 
 
 class MPARSER_API MParser {
-    private:    
+    private:
         ParsingResult result;
     public:
         void reportError(const char *message) { this->reportError(message, false); };
@@ -65,6 +66,7 @@ class MPARSER_API MParser {
         ParsingResult parseInput(pANTLR3_INPUT_STREAM input);
         void parseFile(const char *mfilepath);
         ParsingResult getResult() { return this->result; };
+        void walkTree(pANTLR3_BASE_TREE tree);
 };
 
 #endif //__MPARSER_H

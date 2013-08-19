@@ -12,10 +12,11 @@
 #
 SHELL=/bin/bash
 ANTLR= /usr/local
+LIBJSON= ../json
 CC= gcc
 CPPC= g++
-CCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib
-CPPCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib -g
+CCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib -I$(LIBJSON) -L$(LIBJSON)
+CPPCOPTS= -I$(ANTLR)/include -L$(ANTLR)/lib -I$(LIBJSON) -L$(LIBJSON) -g
 #MEX= mex
 MEX=/usr/local/MATLAB/R2011a/bin/mex
 
@@ -24,7 +25,7 @@ all: frontend mex_frontend
 
 frontend: parse_matlab
 
-parse_matlab: parse_matlab.cpp mparser.hpp
+parse_matlab: parse_matlab.cpp m_parser.hpp
 	$(CPPC) $(CPPCOPTS) -DMPARSER_DLL -DMPARSER_DLL_EXPORTS -shared -Wl,-soname,mparser -o mparser.so \
 	-fPIC parse_matlab.cpp output/matlabLexer.cpp output/matlabParser.cpp -lantlr3c -lboost_filesystem
 
