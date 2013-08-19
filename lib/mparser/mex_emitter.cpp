@@ -137,7 +137,7 @@ int is_binary_op( pTREE tree ) {
   ANTLR3_UINT32 type = TYPE( tree );
 
   if ( type == LOG_OR ||
-       type == LOG_AND || 
+       type == LOG_AND ||
        type == BIN_OR ||
        type == BIN_AND ||
        type == NEQ ||
@@ -192,7 +192,7 @@ void direct_set_child( mxArray *retval, const char *field_name, pTREE tree, int 
     }
   }
   /* go ahead and set the field value */
-  mxSetField( retval, 0, field_name, recurse( CHILD(tree,child_index) ) );  
+  mxSetField( retval, 0, field_name, recurse( CHILD(tree,child_index) ) );
 }
 
 void set_string( mxArray *retval, const char *field, const char *val ) {
@@ -270,7 +270,7 @@ http://groups.google.com/group/comp.std.c/browse_thread/thread/77ee8c8f92e4a3fb/
          39,38,37,36,35,34,33,32,31,30, \
          29,28,27,26,25,24,23,22,21,20, \
          19,18,17,16,15,14,13,12,11,10, \
-         9,8,7,6,5,4,3,2,1,0 
+         9,8,7,6,5,4,3,2,1,0
 
 /* CTN stands for "create typed node".  the idea is that we want to be
    able to declare and initialize a structure easily... the tricky bit
@@ -612,7 +612,7 @@ mxArray *make_id( pTREE tree ) {
   /* we should have zero children.  any children of this node are
      indexers -- but then someone upstream should have called
      "make_id_node", not "make_id"... */
-  MASSERT( tree->children == NULL || NUM_CHILDREN(tree) == 0 ); 
+  MASSERT( tree->children == NULL || NUM_CHILDREN(tree) == 0 );
   mxArray *tmp = mxCreateString( TEXT(tree) );
   return tmp;
 }
@@ -1036,7 +1036,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
       mexErrMsgTxt( "unable to create input stream from string!\n" );
     }
   }
-  
+
   retval = process_input( input );
 
   plhs[0] = mxCreateDoubleScalar( retval.error_count );
