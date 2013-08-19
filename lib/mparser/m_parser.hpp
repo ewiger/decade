@@ -66,7 +66,58 @@ class MPARSER_API MParser {
         ParsingResult parseInput(pANTLR3_INPUT_STREAM input);
         void parseFile(const char *mfilepath);
         ParsingResult getResult() { return this->result; };
+        // Tree visitor pattern with events emission.
         void walkTree(pANTLR3_BASE_TREE tree);
+
+        void emitProgram(pANTLR3_BASE_TREE tree);
+        void emitFunction(pANTLR3_BASE_TREE tree);
+        void emitIf(pANTLR3_BASE_TREE tree);
+        void emitElseif(pANTLR3_BASE_TREE tree);
+        void emitWhile(pANTLR3_BASE_TREE tree);
+        void emitFor(pANTLR3_BASE_TREE tree);
+        void emitSwitch(pANTLR3_BASE_TREE tree);
+        void emitAssign(pANTLR3_BASE_TREE tree);
+        void emitCellarray(pANTLR3_BASE_TREE tree); //0
+        void emitExprStmt(pANTLR3_BASE_TREE tree);
+
+        void emitApply(pANTLR3_BASE_TREE tree);
+        void emitCellapply(pANTLR3_BASE_TREE tree);
+
+        void emitFieldaccess(pANTLR3_BASE_TREE tree);
+        void emitDynfieldaccess(pANTLR3_BASE_TREE tree);
+
+        void emitStringarray(pANTLR3_BASE_TREE tree); //0
+        void emitStringarray(pANTLR3_BASE_TREE tree);
+        void emitCellarray(pANTLR3_BASE_TREE tree); //0
+
+        void emitCell(pANTLR3_BASE_TREE tree);
+        void emitMatrix(pANTLR3_BASE_TREE tree);
+        void emitVector(pANTLR3_BASE_TREE tree);
+
+        void emitId(pANTLR3_BASE_TREE tree);
+        void emitIdNode(pANTLR3_BASE_TREE tree);
+
+        void emitInt(pANTLR3_BASE_TREE tree);
+        void emitFloat(pANTLR3_BASE_TREE tree);
+        void emitString(pANTLR3_BASE_TREE tree);
+
+        void emitAtOperator(pANTLR3_BASE_TREE tree);
+
+        void emitCase(pANTLR3_BASE_TREE tree);
+
+        void emitReturn(pANTLR3_BASE_TREE tree);
+        void emitContinue(pANTLR3_BASE_TREE tree);
+        void emitBreak(pANTLR3_BASE_TREE tree);
+        void emitClear(pANTLR3_BASE_TREE tree);
+
+        void emitParens(pANTLR3_BASE_TREE tree);
+
+        void emitGlobal(pANTLR3_BASE_TREE tree);
+        void emitPersistent(pANTLR3_BASE_TREE tree);
+
+        void emitTry(pANTLR3_BASE_TREE tree);
+        void emitCatch(pANTLR3_BASE_TREE tree);
+
 };
 
 #endif //__MPARSER_H

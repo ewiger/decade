@@ -21,6 +21,41 @@ using namespace std;
 #define TYPE(x) (x)->getType( (x) )
 #define TEXT(x) (char *)( (x)->toString( (x) )->chars )
 
+/*
+ * ----------------------------------------------------------------------------
+ */
+
+/*
+
+These are the kinds of expression-y things we know about:
+
+binary_operators:
+  LOG_OR
+  LOG_AND
+  BIN_OR
+  BIN_AND
+  NEQ | DOUBLE_EQ | GRTE | GRT | LSTE | LST
+  COLON
+  PLUS | MINUS
+  LEFTDIV | RIGHTDIV | TIMES | EL_LEFTDIV | EL_RIGHTDIV | EL_TIMES
+  EXP | EL_EXP
+
+unary operators:
+  postfix_operators:
+    CCT | EL_CCT
+  prefix_operators:
+    PLUS | MINUS | NEG
+
+base_expressions:
+  ID (plus_indexers)
+  INT
+  FLOAT
+  STRING
+  anon_func_handle
+  cell
+  matrix
+*/
+
 
 static void my_error_printer( pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames )
 {
@@ -208,10 +243,10 @@ if ( tree == NULL ) {
 
   /* These are empty container nodes. */
   case EXPRESSION:     return this->walkTree( CHILD( tree, 0 ) );
-  case RHS:            return recurse( CHILD( tree, 0 ) );
-  case LHS:            return recurse( CHILD( tree, 0 ) );
-  case ELSE:           return recurse( CHILD( tree, 0 ) );
-  case OTHERWISE:      return recurse( CHILD( tree, 0 ) );
+  case RHS:            return this->walkTree( CHILD( tree, 0 ) );
+  case LHS:            return this->walkTree( CHILD( tree, 0 ) );
+  case ELSE:           return this->walkTree( CHILD( tree, 0 ) );
+  case OTHERWISE:      return this->walkTree( CHILD( tree, 0 ) );
 
   case NULL_STMT:      return NULL;
 
