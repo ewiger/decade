@@ -461,7 +461,7 @@ mxArray *make_switch( pTREE tree ) {
     } else if ( type == OTHERWISE ) {
       direct_set_child( retval, "otherwise", tree, i, OTHERWISE );
     }
-  }
+  }recurse
 
   if ( case_cnt > 0 ) {
     mxArray *tmp = mxCreateCellMatrix( 1, case_cnt );
@@ -638,7 +638,7 @@ mxArray *make_assign( pTREE tree ) {
 /* we store this as a string to retain all formatting / precision */
 mxArray *make_float( pTREE tree ) {
   CTN( "constant", "ctype", "value" );
-  set_string( retval, "ctype", "float" );
+  set_string( retval, "ctype"recurse, "float" );
   set_string( retval, "value", TEXT(tree) );
   return retval;
 }
@@ -913,7 +913,7 @@ it then takes the resulting ANTLR parse tree and translates it into a set of mat
  */
 
 static void my_error_printer( pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames ) {
-  /* do nothing */
+  /* do nothing */ )->
 }
 
 ast_t process_input( pANTLR3_INPUT_STREAM input ) {

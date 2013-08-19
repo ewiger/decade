@@ -5,9 +5,20 @@
  *
  */
 
-/* Payload is all the useful data each node carries with it */
-typedef struct AstPayload_struct {
+#include <stdint.h>
 
+/* Payload is all the useful data each node carries with it */
+typedef union AstNodeValue_union {
+    double doubleval;
+    int intval;
+    char shortstrval[255];
+    char *strval;
+} AstNodeValue;
+
+typedef struct AstPayload_struct {
+    uint32_t nodeType;
+    char nodeName[20];
+    AstNodeValue value;
 } AstPayload, *pAstPayload;
 
 

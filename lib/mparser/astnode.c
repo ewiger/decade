@@ -12,7 +12,7 @@ pAstPayload createAstPayload()
 {
     pAstPayload newPayload = (pAstPayload) malloc(sizeof(AstPayload));
     //newPayload->
-    
+
     return newPayload;
 }
 
@@ -22,7 +22,7 @@ pAstNode createAstNode(pAstPayload payload)
     newAstNode->numOfChildren = 0;
     newAstNode->children = NULL;
     newAstNode->payload = payload;
-    
+
     return newAstNode;
 }
 
@@ -37,7 +37,7 @@ void addAstChild(pAstNode tree, pAstNode child)
     tree->children[tree->numOfChildren - 1] = child;
 }
 
-pAstNode getAstChild(pAstNode tree, unsigned int index) 
+pAstNode getAstChild(pAstNode tree, unsigned int index)
 {
     if (index >= tree->numOfChildren) {
         die("getAstChild: index is out of range.\n");
